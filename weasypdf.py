@@ -2,6 +2,7 @@ import tornado.ioloop
 import tornado.web
 import json
 import urllib2
+import logging
 import weasyprint
 
 class WeasyPDF(tornado.web.RequestHandler):
@@ -32,8 +33,13 @@ class WeasyPDF(tornado.web.RequestHandler):
         if ua != None:
             headers['User-Agent'] = ua
 
-        req = urllib2.Request(payload['url'], headers=headers)
-        res = urllib2.urlopen(req).read()
+        try:
+            req = urllib2.Request(payload['url'], headers=headers)
+            res = urllib2.urlopen(req).read()
+        except e:
+            self.set_status(204)
+            self.finish()
+            return
 
         self.add_header("Content-Type", "application/pdf")
         self.write(weasyprint.HTML(string=res).write_pdf())
@@ -53,6 +59,7 @@ def main():
     ])
 
     weasypdf.listen(8080)
+    logging.getLogger('tornado.access').disabled = True
     tornado.ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":
