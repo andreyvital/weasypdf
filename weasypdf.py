@@ -2,6 +2,7 @@ import tornado.ioloop
 import tornado.web
 import json
 import urllib2
+import weasyprint
 
 class WeasyPDF(tornado.web.RequestHandler):
     def post(self):
@@ -34,7 +35,8 @@ class WeasyPDF(tornado.web.RequestHandler):
         req = urllib2.Request(payload['url'], headers=headers)
         res = urllib2.urlopen(req).read()
 
-        # (...)
+        self.add_header("Content-Type", "application/pdf")
+        self.write(weasyprint.HTML(string=res).write_pdf())
 
     def write_error(self, status_code, **kwargs):
         self.clear()
