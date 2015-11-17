@@ -4,45 +4,17 @@ import json
 import urllib2
 import logging
 import weasyprint
+import warnings
 
-class WeasyPDF(tornado.web.RequestHandler):
+class WeasyPdf(tornado.web.RequestHandler):
     def post(self):
-        try:
-            payload = json.loads(self.request.body)
-        except ValueError, e:
+        if self.request.headers.get("Content-Type") != "text/html":
             self.set_status(400)
-            self.finish()
-            return
-
-        headers = {
-            "Accept": "text/html"
-        }
-
-        if not "url" in payload or payload['url'] == "":
-            self.set_status(400)
-            self.finish()
-            return
-
-        # relay both `Authorization` and `User-Agent` headers
-        authorization = self.request.headers.get('Authorization')
-        ua = self.request.headers.get('User-Agent')
-
-        if authorization != None:
-            headers['Authorization'] = authorization
-
-        if ua != None:
-            headers['User-Agent'] = ua
-
-        try:
-            req = urllib2.Request(payload['url'], headers=headers)
-            res = urllib2.urlopen(req).read()
-        except e:
-            self.set_status(204)
             self.finish()
             return
 
         self.add_header("Content-Type", "application/pdf")
-        self.write(weasyprint.HTML(string=res).write_pdf())
+        self.write(weasyprint.HTML(string=self.request.body).write_pdf())
 
     def write_error(self, status_code, **kwargs):
         self.clear()
@@ -54,13 +26,19 @@ class WeasyPDF(tornado.web.RequestHandler):
         self.finish()
 
 def main():
+    warnings.filterwarnings("ignore")
+    logging.getLogger("tornado.access").disabled = True
+
     weasypdf = tornado.web.Application([
-        (r"/", WeasyPDF),
+        (r"/.*", WeasyPdf),
     ])
 
-    weasypdf.listen(8080)
-    logging.getLogger('tornado.access').disabled = True
+    weasypdf.listen(80)
+
     tornado.ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass

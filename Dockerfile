@@ -16,6 +16,6 @@ RUN apt-get update && \
   mkdir /weasypdf
 
 ADD weasypdf.py /weasypdf
-EXPOSE 8080
+EXPOSE 80
 
 CMD ["python", "/weasypdf/weasypdf.py"]
